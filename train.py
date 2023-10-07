@@ -11,9 +11,10 @@ import time
 import torch
 import argparse
 import torch.nn as nn
+import deeplake
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, random_split
 from train_data import TrainData
 from val_data import ValData
 from model import GridDehazeNet
@@ -56,12 +57,12 @@ print('learning_rate: {}\ncrop_size: {}\ntrain_batch_size: {}\nval_batch_size: {
 # --- Set category-specific hyper-parameters  --- #
 if category == 'indoor':
     num_epochs = 100
-    train_data_dir = './data/train/indoor/'
-    val_data_dir = './data/test/SOTS/indoor/'
+    train_data_dir = 'GridDehazeNet/data/train/indoor/'
+    val_data_dir = 'GridDehazeNet/data/test/SOTS/indoor/'
 elif category == 'outdoor':
     num_epochs = 10
-    train_data_dir = './data/train/outdoor/'
-    val_data_dir = './data/test/SOTS/outdoor/'
+    train_data_dir = 'GridDehazeNet/data/train/outdoor/'
+    val_data_dir = 'GridDehazeNet/data/test/SOTS/outdoor/'
 else:
     raise Exception('Wrong image category. Set it to indoor or outdoor for RESIDE dateset.')
 
@@ -110,8 +111,15 @@ print("Total_params: {}".format(pytorch_total_params))
 # --- Load training data and validation/test data --- #
 train_data_loader = DataLoader(TrainData(crop_size, train_data_dir), batch_size=train_batch_size, shuffle=True, num_workers=24)
 val_data_loader = DataLoader(ValData(val_data_dir), batch_size=val_batch_size, shuffle=False, num_workers=24)
+print(train_data_loader, val_data_loader)
 
-
+#With DeepLake 
+# ds = deeplake.load('hub://activeloop/reside')
+# master = ds.pytorch(num_workers=24, transform=TrainData, batch_size=train_batch_size, shuffle=True)
+# train_data_loader, val_data_loader, test_data = random_split(master, (0.8,0.2,0))
+# train_data_loader = DataLoader(train_data_loader) 
+# val_data_loader = DataLoader(val_data_loader)
+# print(train_data_loader, val_data_loader)
 # --- Previous PSNR and SSIM in testing --- #
 old_val_psnr, old_val_ssim = validation(net, val_data_loader, device, category)
 print('old_val_psnr: {0:.2f}, old_val_ssim: {1:.4f}'.format(old_val_psnr, old_val_ssim))
@@ -123,7 +131,9 @@ for epoch in range(num_epochs):
 
     for batch_id, train_data in enumerate(train_data_loader):
 
+        # print(train_data.shape)
         haze, gt = train_data
+
         haze = haze.to(device)
         gt = gt.to(device)
 
