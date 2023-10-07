@@ -11,7 +11,6 @@ import time
 import torch
 import argparse
 import torch.nn as nn
-import deeplake
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader, random_split
