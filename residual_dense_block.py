@@ -42,8 +42,17 @@ class RDB(nn.Module):
         self.residual_dense_layers = nn.Sequential(*modules)
         self.conv_1x1 = nn.Conv2d(_in_channels, in_channels, kernel_size=1, padding=0)
 
+        self.pa = nn.Sequential(
+          nn.Conv2d(in_channels, in_channels//8, 1, padding=0, bias=True),
+          nn.GELU(),
+          # nn.ReLU(True),
+          nn.Conv2d(in_channels // 8, 1, 1, padding=0, bias=True),
+          nn.Sigmoid()
+          )
+
     def forward(self, x):
         out = self.residual_dense_layers(x)
         out = self.conv_1x1(out)
+        out = self.pa(out)
         out = out + x
         return out
